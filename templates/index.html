@@ -164,7 +164,7 @@
     <header>
       <div>
         <h1>Split tall images into 3x5 panels</h1>
-        <div class="tagline">Upload an image, split it into 3x5 panels, and grab each panel or download them all at once.</div>
+        <div class="tagline">Upload an image, split it into 3x5 panels, and grab each panel or download them all at once.<br/>Just for you yoonsik ✨</div>
       </div>
     </header>
 
@@ -272,7 +272,7 @@
 
         localStorage.setItem(LAST_JOB_KEY, payload.jobId);
 
-        summary.textContent = `Created ${payload.count} panels in ${payload.targetDir}`;
+        summary.textContent = `Created ${payload.count} panels.`;
         zipLink.href = payload.zipUrl;
         zipLink.textContent = 'Download all as ZIP';
 
@@ -301,7 +301,7 @@
         const res = await fetch(`/job/${jobId}`);
         if (!res.ok) return;
         const payload = await res.json();
-        summary.textContent = `Created ${payload.count} panels in ${payload.targetDir}`;
+        summary.textContent = `Created ${payload.count} panels.`;
         zipLink.href = payload.zipUrl;
         zipLink.textContent = 'Download all as ZIP';
         panels.innerHTML = payload.images.map((src, idx) => `
