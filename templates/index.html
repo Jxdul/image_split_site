@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Splitter</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --accent: #38bdf8;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --shadow: 0 14px 50px rgba(0, 0, 0, 0.35);
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "SF Pro Display", "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 32%),
+                  radial-gradient(circle at 80% 0%, rgba(14,165,233,0.12), transparent 28%),
+                  linear-gradient(145deg, #0b1222, #0a0f1c 55%, #0d1626);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 28px 18px 48px;
+    }
+    .shell {
+      width: min(1100px, 100%);
+      background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 36px);
+      letter-spacing: -0.5px;
+    }
+    .tagline {
+      color: var(--muted);
+      max-width: 700px;
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    form {
+      background: var(--panel);
+      border-radius: var(--radius);
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      display: grid;
+      gap: 16px;
+    }
+    .dropzone {
+      border: 1px dashed rgba(255,255,255,0.2);
+      border-radius: 14px;
+      padding: 22px;
+      text-align: center;
+      background: rgba(255,255,255,0.02);
+      transition: border-color 140ms ease, background-color 140ms ease;
+      cursor: pointer;
+    }
+    .dropzone:hover, .dropzone:focus-within, .dropzone.active {
+      border-color: var(--accent);
+      background: rgba(56,189,248,0.05);
+    }
+    .dropzone input { display: none; }
+    .dropzone strong { color: #cbd5e1; }
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+    }
+    button {
+      background: linear-gradient(135deg, var(--accent), #0ea5e9);
+      color: #0b1222;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 16px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      cursor: pointer;
+      box-shadow: 0 12px 32px rgba(56,189,248,0.25);
+      transition: transform 120ms ease, box-shadow 120ms ease;
+    }
+    button:hover { transform: translateY(-1px); box-shadow: 0 16px 36px rgba(56,189,248,0.3); }
+    button:active { transform: translateY(0); }
+    .status { color: var(--muted); font-size: 14px; }
+    .results {
+      margin-top: 26px;
+      display: grid;
+      gap: 14px;
+    }
+    .preview {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.03);
+      display: grid;
+      gap: 10px;
+    }
+    .preview h3 { margin: 0; font-size: 16px; color: #cbd5e1; }
+    .preview img {
+      max-height: 320px;
+      width: auto;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.28);
+      justify-self: start;
+      background: #0b1222;
+    }
+    .panel-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 12px;
+    }
+    .panel-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .panel-card img {
+      width: 100%;
+      display: block;
+      background: #0b1222;
+    }
+    .panel-meta {
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .panel-meta a { color: var(--accent); text-decoration: none; font-weight: 600; }
+    .hidden { display: none; }
+    @media (max-width: 640px) {
+      body { padding: 18px 12px 32px; }
+      .shell { padding: 22px; }
+      .actions { gap: 10px; }
+      button { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div>
+        <h1>Split tall images into 3x5 panels</h1>
+        <div class="tagline">Upload an image, split it into 3x5 panels, and grab each panel or download them all at once.</div>
+      </div>
+    </header>
+
+    <form id="uploadForm">
+      <label class="dropzone" for="file">
+        <input type="file" id="file" name="image" accept="image/*" required />
+        <div><strong>Drop an image</strong> or click to browse.</div>
+        <div class="tagline" style="margin-top: 6px;">PNG, JPEG, WEBP, BMP, TIFF supported. Panels will show below.</div>
+      </label>
+      <div class="actions">
+        <button type="submit">Split image</button>
+        <div class="status" id="status">Waiting for an upload.</div>
+      </div>
+    </form>
+
+    <div class="preview hidden" id="preview">
+      <h3>Selected image</h3>
+      <img id="previewImg" alt="Selected upload preview" />
+    </div>
+
+    <div class="results hidden" id="results">
+      <div class="actions" style="margin-top: 6px;">
+        <div class="status" id="summary"></div>
+        <a id="zipLink" class="status" href="#" download>Download all</a>
+      </div>
+      <div class="panel-grid" id="panels"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('file');
+    const dropzone = document.querySelector('.dropzone');
+    const status = document.getElementById('status');
+    const results = document.getElementById('results');
+    const summary = document.getElementById('summary');
+    const panels = document.getElementById('panels');
+    const zipLink = document.getElementById('zipLink');
+    const preview = document.getElementById('preview');
+    const previewImg = document.getElementById('previewImg');
+    let previewUrl = null;
+
+    const setFiles = (fileList) => {
+      if (!fileList || !fileList.length) return;
+      const dt = new DataTransfer();
+      dt.items.add(fileList[0]);
+      fileInput.files = dt.files;
+      status.textContent = `Selected: ${fileList[0].name}`;
+      status.style.color = 'var(--muted)';
+
+      // Show preview for the chosen file
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      previewUrl = URL.createObjectURL(fileList[0]);
+      previewImg.src = previewUrl;
+      preview.classList.remove('hidden');
+    };
+
+    ['dragenter', 'dragover'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('active');
+      });
+    });
+
+    ['dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('active');
+      });
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files && files.length) {
+        setFiles(files);
+      }
+    });
+
+    fileInput.addEventListener('change', (e) => {
+      setFiles(e.target.files);
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!fileInput.files.length) {
+        status.textContent = 'Please select an image first.';
+        return;
+      }
+
+      const data = new FormData();
+      data.append('image', fileInput.files[0]);
+
+      status.textContent = 'Splitting...';
+      status.style.color = 'var(--muted)';
+      panels.innerHTML = '';
+      results.classList.add('hidden');
+
+      try {
+        const res = await fetch('/upload', { method: 'POST', body: data });
+        const payload = await res.json();
+        if (!res.ok) throw new Error(payload.error || 'Upload failed.');
+
+        summary.textContent = `Created ${payload.count} panels in ${payload.targetDir}`;
+        zipLink.href = payload.zipUrl;
+        zipLink.textContent = 'Download all as ZIP';
+
+        panels.innerHTML = payload.images.map((src, idx) => `
+          <div class="panel-card">
+            <img src="${src}" alt="Panel ${idx + 1}" loading="lazy" />
+            <div class="panel-meta">
+              <span>Panel ${idx + 1}</span>
+              <a href="${src}" download>Download</a>
+            </div>
+          </div>
+        `).join('');
+
+        results.classList.remove('hidden');
+        status.textContent = 'Done!';
+        status.style.color = '#22c55e';
+      } catch (err) {
+        console.error(err);
+        status.textContent = err.message;
+        status.style.color = '#f87171';
+      }
+    });
+  </script>
+</body>
+</html>
