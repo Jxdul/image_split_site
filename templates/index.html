@@ -335,7 +335,9 @@
       }
     });
 
-    bulkDlBtn.addEventListener('click', () => {
+    const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+
+    bulkDlBtn.addEventListener('click', async () => {
       if (!lastImages.length) {
         status.textContent = 'No images to download yet.';
         status.style.color = '#f87171';
@@ -343,14 +345,15 @@
       }
       status.textContent = 'Starting downloads...';
       status.style.color = 'var(--muted)';
-      lastImages.forEach((src) => {
+      for (const src of lastImages) {
         const a = document.createElement('a');
         a.href = src;
         a.download = '';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-      });
+        await sleep(250); // small delay helps mobile browsers process taps
+      }
       status.textContent = 'Downloads started.';
       status.style.color = '#22c55e';
     });
