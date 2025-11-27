@@ -30,9 +30,6 @@ MAX_UPLOAD_DIRS = 5
 
 app = Flask(__name__)
 
-# In-memory map job_id -> output directory on disk
-jobs: Dict[str, Path] = {}
-
 
 def _is_allowed(filename: str) -> bool:
     return Path(filename).suffix.lower() in ALLOWED_EXTS
@@ -137,7 +134,6 @@ def prune_uploads(max_keep: int = MAX_UPLOAD_DIRS) -> None:
             shutil.rmtree(old_dir)
         except OSError:
             pass
-        jobs.pop(old_dir.name, None)
 
 
 @app.get("/")
@@ -171,7 +167,6 @@ def upload():
     except Exception as exc:
         return jsonify({"error": str(exc)}), 500
 
-    jobs[job_id] = out_dir
     prune_uploads()
 
     image_urls = [url_for("serve_file", job_id=job_id, filename=p.name) for p in sorted(panels)]
@@ -188,9 +183,7 @@ def upload():
 
 @app.get("/file/<job_id>/<path:filename>")
 def serve_file(job_id: str, filename: str):
-    out_dir = jobs.get(job_id)
-    if not out_dir:
-        abort(404)
+    out_dir = UPLOAD_ROOT / job_id / "panels"
     file_path = out_dir / filename
     if not file_path.exists() or not file_path.is_file():
         abort(404)
@@ -199,8 +192,8 @@ def serve_file(job_id: str, filename: str):
 
 @app.get("/zip/<job_id>")
 def download_zip(job_id: str):
-    out_dir = jobs.get(job_id)
-    if not out_dir or not out_dir.exists():
+    out_dir = UPLOAD_ROOT / job_id / "panels"
+    if not out_dir.exists():
         abort(404)
 
     import zipfile
