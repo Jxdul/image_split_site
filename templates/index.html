@@ -188,7 +188,10 @@
     <div class="results hidden" id="results">
       <div class="actions" style="margin-top: 6px;">
         <div class="status" id="summary"></div>
-        <a id="zipLink" class="status" href="#" download>Download all</a>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <a id="zipLink" class="status" href="#" download>Download all as ZIP</a>
+          <button type="button" id="bulkDlBtn" style="background:transparent;border:1px solid rgba(255,255,255,0.2);color:var(--text);padding:8px 10px;border-radius:10px;box-shadow:none;cursor:pointer;">Download all images</button>
+        </div>
       </div>
       <div class="panel-grid" id="panels"></div>
     </div>
@@ -203,10 +206,12 @@
     const summary = document.getElementById('summary');
     const panels = document.getElementById('panels');
     const zipLink = document.getElementById('zipLink');
+    const bulkDlBtn = document.getElementById('bulkDlBtn');
     const preview = document.getElementById('preview');
     const previewImg = document.getElementById('previewImg');
     let previewUrl = null;
     const LAST_JOB_KEY = 'image_split_last_job';
+    let lastImages = [];
 
     const setFiles = (fileList) => {
       if (!fileList || !fileList.length) return;
@@ -275,6 +280,7 @@
         summary.textContent = `Created ${payload.count} panels.`;
         zipLink.href = payload.zipUrl;
         zipLink.textContent = 'Download all as ZIP';
+        lastImages = payload.images || [];
 
         panels.innerHTML = payload.images.map((src, idx) => `
           <div class="panel-card">
@@ -304,6 +310,7 @@
         summary.textContent = `Created ${payload.count} panels.`;
         zipLink.href = payload.zipUrl;
         zipLink.textContent = 'Download all as ZIP';
+        lastImages = payload.images || [];
         panels.innerHTML = payload.images.map((src, idx) => `
           <div class="panel-card">
             <img src="${src}" alt="Panel ${idx + 1}" loading="lazy" />
@@ -326,6 +333,26 @@
       if (lastJob) {
         await loadJob(lastJob);
       }
+    });
+
+    bulkDlBtn.addEventListener('click', () => {
+      if (!lastImages.length) {
+        status.textContent = 'No images to download yet.';
+        status.style.color = '#f87171';
+        return;
+      }
+      status.textContent = 'Starting downloads...';
+      status.style.color = 'var(--muted)';
+      lastImages.forEach((src) => {
+        const a = document.createElement('a');
+        a.href = src;
+        a.download = '';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      });
+      status.textContent = 'Downloads started.';
+      status.style.color = '#22c55e';
     });
   </script>
 </body>
