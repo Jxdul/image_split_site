@@ -12,7 +12,7 @@ Small Flask front-end that embeds the 3:5 splitter logic directly (no external s
    ```bash
    python3 app.py
    ```
-4. Open `http://localhost:80` (or your chosen port) in your browser. Upload an image (PNG/JPG/WEBP/BMP/TIFF). Outputs are written into `uploads/<job>/panels/` inside this folder and served back for preview/download.
+4. Open `http://localhost:6767` (or your chosen port) in your browser. Upload an image (PNG/JPG/WEBP/BMP/TIFF). Outputs are written into `uploads/<job>/panels/` inside this folder and served back for preview/download.
 
 ## How it works
 - `/upload` accepts the file, saves it to `uploads/<job>/`, and runs the embedded splitter to produce 3:5 PNG panels into `uploads/<job>/panels/`.
