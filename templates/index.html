@@ -206,6 +206,7 @@
     const preview = document.getElementById('preview');
     const previewImg = document.getElementById('previewImg');
     let previewUrl = null;
+    const LAST_JOB_KEY = 'image_split_last_job';
 
     const setFiles = (fileList) => {
       if (!fileList || !fileList.length) return;
@@ -269,6 +270,8 @@
         const payload = await res.json();
         if (!res.ok) throw new Error(payload.error || 'Upload failed.');
 
+        localStorage.setItem(LAST_JOB_KEY, payload.jobId);
+
         summary.textContent = `Created ${payload.count} panels in ${payload.targetDir}`;
         zipLink.href = payload.zipUrl;
         zipLink.textContent = 'Download all as ZIP';
@@ -290,6 +293,38 @@
         console.error(err);
         status.textContent = err.message;
         status.style.color = '#f87171';
+      }
+    });
+
+    async function loadJob(jobId) {
+      try {
+        const res = await fetch(`/job/${jobId}`);
+        if (!res.ok) return;
+        const payload = await res.json();
+        summary.textContent = `Created ${payload.count} panels in ${payload.targetDir}`;
+        zipLink.href = payload.zipUrl;
+        zipLink.textContent = 'Download all as ZIP';
+        panels.innerHTML = payload.images.map((src, idx) => `
+          <div class="panel-card">
+            <img src="${src}" alt="Panel ${idx + 1}" loading="lazy" />
+            <div class="panel-meta">
+              <span>Panel ${idx + 1}</span>
+              <a href="${src}" download>Download</a>
+            </div>
+          </div>
+        `).join('');
+        results.classList.remove('hidden');
+        status.textContent = 'Restored previous job.';
+        status.style.color = 'var(--muted)';
+      } catch (e) {
+        console.warn('Failed to load job', e);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      const lastJob = localStorage.getItem(LAST_JOB_KEY);
+      if (lastJob) {
+        await loadJob(lastJob);
       }
     });
   </script>

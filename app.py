@@ -208,6 +208,40 @@ def download_zip(job_id: str):
     return send_file(buffer, mimetype="application/zip", as_attachment=True, download_name=download_name)
 
 
+def build_job_payload(job_id: str) -> Dict[str, object]:
+    """Assemble response payload for a given job id."""
+    out_dir = UPLOAD_ROOT / job_id / "panels"
+    if not out_dir.exists():
+        abort(404)
+    panels = sorted([p for p in out_dir.glob("*.png") if p.is_file()])
+    if not panels:
+        abort(404)
+    image_urls = [url_for("serve_file", job_id=job_id, filename=p.name) for p in panels]
+    zip_url = url_for("download_zip", job_id=job_id)
+    return {
+        "jobId": job_id,
+        "images": image_urls,
+        "zipUrl": zip_url,
+        "count": len(image_urls),
+        "targetDir": str(out_dir),
+    }
+
+
+@app.get("/job/<job_id>")
+def job_info(job_id: str):
+    return jsonify(build_job_payload(job_id))
+
+
+@app.get("/recent")
+def recent_job():
+    """Return the most recently modified job (if any)."""
+    dirs = [d for d in UPLOAD_ROOT.iterdir() if d.is_dir()]
+    if not dirs:
+        return jsonify({"message": "No jobs yet"}), 404
+    newest = max(dirs, key=lambda p: p.stat().st_mtime)
+    return jsonify(build_job_payload(newest.name))
+
+
 if __name__ == "__main__":
     # Use host=0.0.0.0 to be reachable on LAN if needed; change as appropriate.
     app.run(debug=True, host="0.0.0.0", port=6767)
